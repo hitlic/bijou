@@ -1,6 +1,7 @@
 from bijou import __vsersion__
 import setuptools
 
+desc = 'A fastai-like framework for training, tuning and probing pytorch models, which is compatible with pytorch_geometric.'
 with open("README.md", 'r') as fh:
     long_description = fh.read()
 
@@ -10,9 +11,9 @@ setuptools.setup(
     author="hitlic",
     author_email="liuchen.lic@gmail.com",
     license='MIT',
-    description="",
+    description=desc,
     long_description=long_description,
-    url="",
+    url="https://github.com/hitlic/bijou",
     classifiers=[
         'Development Status :: 3 - Alpha',
         "Programming Language :: Python :: 3",
@@ -21,7 +22,7 @@ setuptools.setup(
     ],
     keywords='',
     packages=setuptools.find_packages(),
-    py_modules=[], # any single-file Python modules that aren’t part of a package
+    py_modules=[],
     install_requires=['torch > 1.1', 'tqdm > 4.40', 'matplotlib > 3.1', 'networkx >= 2.3'],
     python_requires='>=3.5'
 )
