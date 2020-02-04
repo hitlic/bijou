@@ -13,7 +13,7 @@ A lightweight freamwork based on [fastai course](https://course.fast.ai) for tra
 
 - `pip install bijou`
 
-### Dependency
+### Dependencies
 
   - Pytorch
   - Matplotlib
