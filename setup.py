@@ -2,6 +2,7 @@ from bijou import __vsersion__
 import setuptools
 
 desc = 'A fastai-like framework for training, tuning and probing pytorch models, which is compatible with pytorch_geometric.'
+
 with open("README.md", 'r') as fh:
     long_description = fh.read()
 
