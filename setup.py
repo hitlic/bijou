@@ -14,6 +14,7 @@ setuptools.setup(
     license='MIT',
     description=desc,
     long_description=long_description,
+    long_description_content_type='text/markdown',
     url="https://github.com/hitlic/bijou",
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -22,7 +23,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     keywords='',
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=['datasets',]),
     py_modules=[],
     install_requires=['torch > 1.1', 'tqdm > 4.40', 'matplotlib > 3.1', 'networkx >= 2.3'],
     python_requires='>=3.5'
