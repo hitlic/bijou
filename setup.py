@@ -23,7 +23,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     keywords='',
-    packages=setuptools.find_packages(exclude=['datasets',]),
+    packages=setuptools.find_packages(exclude=['examples', 'datasets',]),
     py_modules=[],
     install_requires=['torch > 1.1', 'tqdm > 4.40', 'matplotlib > 3.1', 'networkx >= 2.3'],
     python_requires='>=3.5'
