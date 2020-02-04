@@ -2,7 +2,7 @@
 
 A lightweight freamwork based on [fastai course](https://course.fast.ai) for training pytorch models conveniently. It is also compatible with [pytorch_geometric](https://github.com/rusty1s/pytorch_geometric) dataset and models for [Graph Neural Networks](https://arxiv.org/pdf/1812.08434.pdf).
 
-## Main features
+## Features
 - Compatible with PyG
   - Graph level learning: It is compatible with [pytorch_geometric](https://github.com/rusty1s/pytorch_geometric) for Graph Neural Networks of graph classification and other graph level learning.
   - Node level learning: It can be used in node classification or other node level learning with sigle [pytorch_geometric Data](https://pytorch-geometric.readthedocs.io/en/latest/modules/data.html).
