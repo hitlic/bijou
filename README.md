@@ -1,6 +1,6 @@
 # bijou
 
-A lightweight freamwork based on [fastai course](https://course.fast.ai) for training pytorch models conveniently. It is also compatible with [pytorch_geometric](https://github.com/rusty1s/pytorch_geometric) dataset and models for [Graph Neural Networks](https://arxiv.org/pdf/1812.08434.pdf).
+A lightweight freamwork based on [fastai course](https://course.fast.ai) for training pytorch models conveniently. In particular, it is compatible with [pytorch_geometric](https://github.com/rusty1s/pytorch_geometric) dataset and models for [Graph Neural Networks](https://arxiv.org/pdf/1812.08434.pdf).
 
 ## Features
 - Compatible with PyG
