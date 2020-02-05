@@ -7,11 +7,11 @@ import itertools
 import networkx as nx
 
 
-def test_target(interp, target):
-    assert target in ['train', 'val', 'test'], '"target" must be "train", "val" or "test"'
-    bs = getattr(interp, f'_ybs_{target}')
+def test_phase(interp, phase):
+    assert phase in ['train', 'val', 'test'], '"phase" must be "train", "val" or "test"'
+    bs = getattr(interp, f'_ybs_{phase}')
     if not bs:
-        raise Exception(f'!!! "{target}" is not performed')
+        raise Exception(f'!!! "{phase}" is not performed')
 
 
 class InterpreterBase(Callback):
@@ -59,33 +59,33 @@ class InterpreterBase(Callback):
             getattr(self, f'_ybs_{self.state}').append(self.yb)
             getattr(self, f'_xbs_{self.state}').append(self.xb.to(self.cpu))  # 放入CPU中避免占用GPU存储
 
-    def cat(self, target):
+    def cat(self, phase):
         raise Exception("To be rewrited!!!")
 
-    def create_top_indices(self, top_indices, target):
-        batch_size = len(getattr(self, f'_ybs_{target}')[0])
+    def create_top_indices(self, top_indices, phase):
+        batch_size = len(getattr(self, f'_ybs_{phase}')[0])
         top_index = {
             'batch': [i // batch_size for i in top_indices],
             'index': [i % batch_size for i in top_indices]
         }
         return top_index
 
-    def top_data(self, metric, target='train', largest=True, k=0):
+    def top_data(self, metric, phase='train', largest=True, k=0):
         """
         返回metric指标最大（largest=True）或最小（largest=False）的k个数据。
         Args:
             metric: 计算指标
-            target: 分析对象，'train', 'val' 或 'test'分别表示训练数据、验证数据或测试数据
+            phase: 分析对象，'train', 'val' 或 'test'分别表示训练数据、验证数据或测试数据
             largest: 返回最大还是最小的k个数据
         Return: (top_scores, top_xs, top_ys, top_preds, top_index)即
                 (metric最大值, 最大值对应的x, 最大值对应的y, 最大值对应的pred, {最大值所在batch及在batch中的位置})
         """
-        test_target(self, target)
+        test_phase(self, phase)
 
-        self.cat(target)
+        self.cat(phase)
         scores = []
         with torch.no_grad():
-            for preb, yb in zip(getattr(self, f'_predbs_{target}'), getattr(self, f'_ybs_{target}')):
+            for preb, yb in zip(getattr(self, f'_predbs_{phase}'), getattr(self, f'_ybs_{phase}')):
                 scores.append(metric(preb, yb).detach().cpu())
         scores = torch.cat(scores)
         if k == 0:
@@ -94,42 +94,42 @@ class InterpreterBase(Callback):
         top_indices = top_k.indices.numpy()
 
         top_scores = top_k.values.numpy()
-        # top_xs = getattr(self, f'_x_{target}')[top_indices]
-        top_xs = [getattr(self, f'_x_{target}')[i] for i in top_indices]
-        top_ys = getattr(self, f'_y_{target}')[top_indices].numpy()
-        top_preds = getattr(self, f'_pred_{target}')[top_indices].numpy()
+        # top_xs = getattr(self, f'_x_{phase}')[top_indices]
+        top_xs = [getattr(self, f'_x_{phase}')[i] for i in top_indices]
+        top_ys = getattr(self, f'_y_{phase}')[top_indices].numpy()
+        top_preds = getattr(self, f'_pred_{phase}')[top_indices].numpy()
 
-        return top_scores, top_xs, top_ys, top_preds, self.create_top_indices(top_indices, target)
+        return top_scores, top_xs, top_ys, top_preds, self.create_top_indices(top_indices, phase)
 
-    def confusion_matrix(self, target='train', return_dict=False):
+    def confusion_matrix(self, phase='train', return_dict=False):
         """
         混淆矩阵
         """
         if self.task_type != 'classify':
             raise Exception('Confusion matrix only in "classify" tasks!')
-        test_target(self, target)
+        test_phase(self, phase)
         # 若已存在，不必再计算
         if return_dict:
-            c_dict = getattr(self, f'c_dict_{target}')
+            c_dict = getattr(self, f'c_dict_{phase}')
             if c_dict is not None:
                 return c_dict
         else:
-            c_matrix = getattr(self, f'c_matrix_{target}')
+            c_matrix = getattr(self, f'c_matrix_{phase}')
             if c_matrix is not None:
                 return c_matrix
 
-        self.cat(target)
+        self.cat(phase)
 
-        pred_size = getattr(self, f'_pred_{target}').size()
+        pred_size = getattr(self, f'_pred_{phase}').size()
         if len(pred_size) == 1:  # for sigmoid output classification
             self.class_num = 2
         else:
             self.class_num = pred_size[1]
 
         c_dict = {}
-        for x, y, pred in zip(getattr(self, f'_x_{target}'),
-                              getattr(self, f'_y_{target}'),
-                              getattr(self, f'_pred_{target}')):
+        for x, y, pred in zip(getattr(self, f'_x_{phase}'),
+                              getattr(self, f'_y_{phase}'),
+                              getattr(self, f'_pred_{phase}')):
             if len(pred_size) == 1:
                 key = (int(y.numpy().tolist()), pred.round().int().numpy().tolist())
             else:
@@ -142,24 +142,24 @@ class InterpreterBase(Callback):
         for key, item in c_dict.items():
             c_matrix[key[0], key[1]] = len(item)
 
-        setattr(self, f'c_dict_{target}', c_dict)
-        setattr(self, f'c_matrix_{target}', c_matrix)
+        setattr(self, f'c_dict_{phase}', c_dict)
+        setattr(self, f'c_matrix_{phase}', c_matrix)
 
         if return_dict:
             return c_dict
         else:
             return c_matrix
 
-    def plot_confusion(self, target='train', title='Confusion matrix', class_names=None,
+    def plot_confusion(self, phase='train', title='Confusion matrix', class_names=None,
                        normalize=False, norm_dec=2, cmap='Blues', **kwargs):
         """
         画出混淆矩阵
         """
         if self.task_type != 'classify':
             raise Exception('Confusion matrix only in "classify" tasks!')
-        test_target(self, target)
+        test_phase(self, phase)
 
-        c_matrix = self.confusion_matrix(target)
+        c_matrix = self.confusion_matrix(phase)
         data_size = c_matrix.sum()
         if normalize:
             c_matrix = c_matrix.astype('float') / c_matrix.sum(axis=1)[:, np.newaxis]
@@ -167,7 +167,7 @@ class InterpreterBase(Callback):
         fig = plt.figure(**kwargs)
 
         plt.imshow(c_matrix, interpolation='nearest', cmap=cmap)
-        plt.title(f'{title} - {target}({data_size})')
+        plt.title(f'{title} - {phase}({data_size})')
         if class_names and len(tbox.listify(class_names)) == self.class_num:
             tick_marks = np.arange(self.class_num)
             plt.xticks(tick_marks, class_names, rotation=90)
@@ -189,15 +189,15 @@ class InterpreterBase(Callback):
         fig.subplots_adjust(bottom=0.1)
         return fig
 
-    def most_confused(self, target='train', k=5):
+    def most_confused(self, phase='train', k=5):
         """
         错分最多的情况
         """
         if self.task_type != 'classify':
             raise Exception('Confusion matrix only in "classify" tasks!')
-        test_target(self, target)
+        test_phase(self, phase)
 
-        c_dict = self.confusion_matrix(target, return_dict=True)
+        c_dict = self.confusion_matrix(phase, return_dict=True)
         c_items = [c for c in c_dict.items() if c[0][0] != c[0][1]]
         return sorted(c_items, key=lambda e: len(e[1]), reverse=True)[:k]
 
@@ -212,18 +212,18 @@ class Interpreter(InterpreterBase):
         """
         super().__init__(task_type, learner, multi_out)
 
-    def cat(self, target):
-        if getattr(self, f'_x_{target}', None) is None:
-            setattr(self, f'_x_{target}', torch.cat(getattr(self, f'_xbs_{target}')))
-        if getattr(self, f'_y_{target}', None) is None:
-            setattr(self, f'_y_{target}', torch.cat(getattr(self, f'_ybs_{target}')).detach().cpu())
-        if getattr(self, f'_pred_{target}', None) is None:
+    def cat(self, phase):
+        if getattr(self, f'_x_{phase}', None) is None:
+            setattr(self, f'_x_{phase}', torch.cat(getattr(self, f'_xbs_{phase}')))
+        if getattr(self, f'_y_{phase}', None) is None:
+            setattr(self, f'_y_{phase}', torch.cat(getattr(self, f'_ybs_{phase}')).detach().cpu())
+        if getattr(self, f'_pred_{phase}', None) is None:
             if not self.multi_out:
-                setattr(self, f'_pred_{target}', torch.cat(getattr(self, f'_predbs_{target}')).detach().cpu())
+                setattr(self, f'_pred_{phase}', torch.cat(getattr(self, f'_predbs_{phase}')).detach().cpu())
             else:
-                predbs = getattr(self, f'_predbs_{target}')
+                predbs = getattr(self, f'_predbs_{phase}')
                 predbs = [torch.cat(predb, 1) for predb in predbs]
-                setattr(self, f'_pred_{target}', torch.cat(predbs).detach().cpu())
+                setattr(self, f'_pred_{phase}', torch.cat(predbs).detach().cpu())
 
 
 def data2g(data):
@@ -246,22 +246,22 @@ class PyGGraphInterpreter(InterpreterBase):
         """
         super().__init__(task_type, learner, multi_out)
 
-    def cat(self, target):
-        if getattr(self, f'_x_{target}', None) is None:
-            databs = getattr(self, f'_xbs_{target}')
+    def cat(self, phase):
+        if getattr(self, f'_x_{phase}', None) is None:
+            databs = getattr(self, f'_xbs_{phase}')
             data_list = []
             for b in databs:
                 data_list.extend(b.to_data_list())
-            setattr(self, f'_x_{target}', data_list)
-        if getattr(self, f'_y_{target}', None) is None:
-            setattr(self, f'_y_{target}', torch.cat(getattr(self, f'_ybs_{target}')).detach().cpu())
-        if getattr(self, f'_pred_{target}', None) is None:
+            setattr(self, f'_x_{phase}', data_list)
+        if getattr(self, f'_y_{phase}', None) is None:
+            setattr(self, f'_y_{phase}', torch.cat(getattr(self, f'_ybs_{phase}')).detach().cpu())
+        if getattr(self, f'_pred_{phase}', None) is None:
             if not self.multi_out:
-                setattr(self, f'_pred_{target}', torch.cat(getattr(self, f'_predbs_{target}')).detach().cpu())
+                setattr(self, f'_pred_{phase}', torch.cat(getattr(self, f'_predbs_{phase}')).detach().cpu())
             else:
-                predbs = getattr(self, f'_predbs_{target}')
+                predbs = getattr(self, f'_predbs_{phase}')
                 predbs = [torch.cat(predb, 1) for predb in predbs]
-                setattr(self, f'_pred_{target}', torch.cat(predbs).detach().cpu())
+                setattr(self, f'_pred_{phase}', torch.cat(predbs).detach().cpu())
 
     def plot_graph(self, data, **kwargs):
         g = data2g(data)
@@ -288,36 +288,36 @@ class PyGNodeInterpreter(InterpreterBase):
         """
         super().__init__(task_type, learner, multi_out)
 
-    def cat(self, target):
-        if getattr(self, f'_x_{target}', None) is None:
+    def cat(self, phase):
+        if getattr(self, f'_x_{phase}', None) is None:
             # batches of y
-            ys = getattr(self, f'_ybs_{target}')[0]
+            ys = getattr(self, f'_ybs_{phase}')[0]
             mask = ys.mask
             ys = ys.data[mask]
-            setattr(self, f'_y_{target}', ys.detach().cpu())
-            setattr(self, f'_mask_{target}', mask)
+            setattr(self, f'_y_{phase}', ys.detach().cpu())
+            setattr(self, f'_mask_{phase}', mask)
 
             # batches of x
-            data = getattr(self, f'_xbs_{target}')[0]
-            setattr(self, f'_x_{target}', data.x[mask])
+            data = getattr(self, f'_xbs_{phase}')[0]
+            setattr(self, f'_x_{phase}', data.x[mask])
 
             # batches of pred
             if not self.multi_out:
-                setattr(self, f'_pred_{target}', torch.cat(getattr(self, f'_predbs_{target}'))[mask].detach().cpu())
+                setattr(self, f'_pred_{phase}', torch.cat(getattr(self, f'_predbs_{phase}'))[mask].detach().cpu())
             else:
-                predbs = getattr(self, f'_predbs_{target}')
+                predbs = getattr(self, f'_predbs_{phase}')
                 predbs = [torch.cat(predb, 1)[mask] for predb in predbs]
-                setattr(self, f'_pred_{target}', torch.cat(predbs).detach().cpu())
+                setattr(self, f'_pred_{phase}', torch.cat(predbs).detach().cpu())
 
-    def create_top_indices(self, top_indices, target):
-        mask = getattr(self, f'_mask_{target}').numpy()
+    def create_top_indices(self, top_indices, phase):
+        mask = getattr(self, f'_mask_{phase}').numpy()
         index = np.where(mask == True)[0]
         top_index = {
             'index': [index[i] for i in top_indices]
         }
         return top_index
 
-    def plot_graph(self, metric, k=0, largest=True, target='train',
+    def plot_graph(self, metric, k=0, largest=True, phase='train',
                    layout=None, max_node_size=500, min_node_size=100,
                    label_id=False, label_score=True, dec=2, **kwargs):
         """
@@ -326,7 +326,7 @@ class PyGNodeInterpreter(InterpreterBase):
             metric: top_data metric. 计算指标，与Learner中的指标不同，需要返回每个数据的计算结果，即无需reduction（如均值）
             k: 多少数据
             largest: 返回最大还是最小的数据
-            target: train, val or test
+            phase: train, val or test
             layout: networkx layout函数
             max_node_size: 最大节点大小
             min_node_size: 最小节点大小
@@ -334,15 +334,15 @@ class PyGNodeInterpreter(InterpreterBase):
             label_score: metric的值是否出现在节点label中
             dec: 若metric值的小数位数
         """
-        test_target(self, target)
+        test_phase(self, phase)
 
-        scores, _, _, _, indecies = self.top_data(metric, target, largest, 0)
+        scores, _, _, _, indecies = self.top_data(metric, phase, largest, 0)
         if k == 0:
             k = len(scores)
         scores = scores[:k]
         indecies = indecies['index'][:k]
 
-        data = getattr(self, f'_xbs_{target}')[0]
+        data = getattr(self, f'_xbs_{phase}')[0]
         if data.num_nodes > 1000:
             print('\nALERT! The network is larger than 1000. Drawing may take a long time!\n')
 

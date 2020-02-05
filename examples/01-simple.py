@@ -17,6 +17,7 @@ bs = 128
 train_dl = DataLoader(train_ds, batch_size=bs, shuffle=True)
 valid_dl = DataLoader(valid_ds, batch_size=bs)
 test_dl = DataLoader(test_ds, batch_size=bs)
+# train_dl, valid_dl, test_dl = DataLoader.loaders(train_ds, valid_ds, test_ds, 128)
 data = DataBunch(train_dl, valid_dl)
 
 

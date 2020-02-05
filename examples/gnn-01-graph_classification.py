@@ -5,11 +5,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch_geometric.data import DataLoader
 from torch_geometric.nn import global_max_pool, TopKPooling, GCNConv
 from bijou.learner import Learner
 from bijou.datasets import yoochoose_10k
-from bijou.data import PyGDataLoaderWrapper, DataBunch
+from bijou.data import DataBunch, PyGDataLoader
 from bijou.metrics import accuracy
 from pyg_dataset import YooChooseBinaryDataset
 import matplotlib.pyplot as plt
@@ -22,9 +21,11 @@ else:
 # 1. dataset
 dataset = YooChooseBinaryDataset(root=yoochoose_10k()).shuffle()
 train_ds, val_ds, test_ds = dataset[:8000], dataset[8000:9000], dataset[9000:]
-train_dl = PyGDataLoaderWrapper(DataLoader(train_ds, batch_size=64, shuffle=True))
-val_dl = PyGDataLoaderWrapper(DataLoader(val_ds, batch_size=64))
-test_dl = PyGDataLoaderWrapper(DataLoader(test_ds, batch_size=64))
+
+train_dl = PyGDataLoader(train_ds, batch_size=64, shuffle=True)
+val_dl = PyGDataLoader(val_ds, batch_size=64)
+test_dl = PyGDataLoader(test_ds, batch_size=64)
+
 train_db = DataBunch(train_dl, val_dl)
 
 

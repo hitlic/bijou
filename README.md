@@ -40,6 +40,7 @@ train_ds, valid_ds, test_ds = Dataset(x_train, y_train), Dataset(x_valid, y_vali
 train_dl = DataLoader(train_ds, batch_size=128, shuffle=True)
 valid_dl = DataLoader(valid_ds, batch_size=128)
 test_dl = DataLoader(test_ds, batch_size=128)
+# train_dl, valid_dl, test_dl = DataLoader.loaders(train_ds, valid_ds, test_ds, 128)
 train_db = DataBunch(train_dl, valid_dl)
 
 # 2. model and optimizer
@@ -73,11 +74,10 @@ NOTE: Performance of this GNN model's is not good, as the dataset is highly unba
 
 ```python
 import torch, torch.nn as nn, torch.nn.functional as F, torch.optim as optim
-from torch_geometric.data import DataLoader
 from torch_geometric.nn import global_max_pool, TopKPooling, GCNConv
 from bijou.learner import Learner
 from bijou.datasets import yoochoose_10k
-from bijou.data import PyGDataLoaderWrapper, DataBunch
+from bijou.data import DataBunch, PyGDataLoader
 from bijou.metrics import accuracy
 from examples.pyg_dataset import YooChooseBinaryDataset
 import matplotlib.pyplot as plt
@@ -85,9 +85,10 @@ import matplotlib.pyplot as plt
 # 1. dataset
 dataset = YooChooseBinaryDataset(root=yoochoose_10k()).shuffle()
 train_ds, val_ds, test_ds = dataset[:8000], dataset[8000:9000], dataset[9000:]
-train_dl = PyGDataLoaderWrapper(DataLoader(train_ds, batch_size=64, shuffle=True))
-val_dl = PyGDataLoaderWrapper(DataLoader(val_ds, batch_size=64))
-test_dl = PyGDataLoaderWrapper(DataLoader(test_ds, batch_size=64))
+train_dl = PyGDataLoader(train_ds, batch_size=64, shuffle=True)
+val_dl = PyGDataLoader(val_ds, batch_size=64)
+test_dl = PyGDataLoader(test_ds, batch_size=64)
+# train_dl, val_dl, test_dl = PyGDataLoader.loaders(train_ds, val_ds, test_ds, 64)
 train_db = DataBunch(train_dl, val_dl)
 
 # 2. mode and optimizer
@@ -145,7 +146,7 @@ plt.show()
 from torch_geometric.datasets import Planetoid
 import torch.nn as nn, torch.nn.functional as F, torch.optim as optim
 from torch_geometric.nn import GCNConv
-from bijou.data import PyGDataWrapper, DataBunch
+from bijou.data import PyGGraphLoader, DataBunch
 from bijou.learner import Learner
 from bijou.metrics import masked_cross_entropy, masked_accuracy
 from bijou.datasets import cora
@@ -153,10 +154,11 @@ import matplotlib.pyplot as plt
 
 # 1. dataset
 dataset = Planetoid(root=cora(), name='Cora')
-train_data = PyGDataWrapper(dataset[0], 'train')
-val_data = PyGDataWrapper(dataset[0], 'val')
-test_data = PyGDataWrapper(dataset[0], 'test')
-data = DataBunch(train_data, val_data)
+train_dl = PyGGraphLoader(dataset, 'train')
+val_dl = PyGGraphLoader(dataset, 'val')
+test_dl = PyGGraphLoader(dataset, 'test')
+# train_dl, val_dl, test_dl = PyGGraphLoader.loaders(dataset)
+data = DataBunch(train_dl, val_dl)
 
 # 2. model and optimizer
 class Model(nn.Module):
@@ -183,7 +185,7 @@ learner = Learner(model, opt, masked_cross_entropy, data, metrics=[masked_accura
 learner.fit(100)
 
 # 5. test
-learner.test(test_data)
+learner.test(test_dl)
 
 # 6. predict
 pred = learner.predict(dataset[0])

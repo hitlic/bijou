@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch_geometric.nn import GCNConv
-from bijou.data import PyGDataWrapper, DataBunch
+from bijou.data import PyGGraphLoader, DataBunch
 from bijou.learner import Learner
 from bijou.metrics import masked_cross_entropy, masked_accuracy
 from bijou.datasets import cora
@@ -21,10 +21,11 @@ else:
     torch.manual_seed(1)
 
 dataset = Planetoid(root=cora(), name='Cora')
-train_data = PyGDataWrapper(dataset[0], 'train')
-val_data = PyGDataWrapper(dataset[0], 'val')
-test_data = PyGDataWrapper(dataset[0], 'test')
-data = DataBunch(train_data, val_data)
+# train_dl = PyGGraphLoader(dataset, 'train')
+# val_dl = PyGGraphLoader(dataset, 'val')
+# test_dl = PyGGraphLoader(dataset, 'test')
+train_dl, val_dl, test_dl = PyGGraphLoader.loaders(dataset)
+data = DataBunch(train_dl, val_dl)
 
 
 class Model(nn.Module):
@@ -47,15 +48,15 @@ opt = optim.SGD(model.parameters(), lr=0.5, weight_decay=0.01)
 learner = Learner(model, opt, masked_cross_entropy, data, metrics=[masked_accuracy], callbacks=PyGNodeInterpreter)
 
 learner.fit(100)
-learner.test(test_data)
+learner.test(test_dl)
 
 def loss_noreduction(pred, target):
     return F.cross_entropy(pred[target.mask], target.data[target.mask], reduction='none')
 
-scores, xs, ys, preds, indecies = learner.interpreter.top_data(loss_noreduction, k=10, target='train', largest=True)
-learner.interpreter.plot_confusion(target='train')
-learner.interpreter.plot_confusion(target='val')
-learner.interpreter.plot_confusion(target='test')
+scores, xs, ys, preds, indecies = learner.interpreter.top_data(loss_noreduction, k=10, phase='train', largest=True)
+learner.interpreter.plot_confusion(phase='train')
+learner.interpreter.plot_confusion(phase='val')
+learner.interpreter.plot_confusion(phase='test')
 
 scores, xs, ys, preds, indecies = learner.interpreter.most_confused()
 print(scores)

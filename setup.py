@@ -25,6 +25,6 @@ setuptools.setup(
     keywords='',
     packages=setuptools.find_packages(exclude=['examples', 'datasets',]),
     py_modules=[],
-    install_requires=['torch > 1.1', 'tqdm > 4.40', 'matplotlib > 3.1', 'networkx >= 2.3'],
+    install_requires=['torch > 1.1', 'tqdm > 4.40', 'matplotlib > 3.1', 'networkx >= 2.3', 'requests > 2.20.0'],
     python_requires='>=3.5'
 )
