@@ -4,12 +4,13 @@
 """
 
 import torch
+from bijou.data import DataLoaderBase
 from bijou.utils import ToolBox as tbox
 import bijou.callbacks as cbks
 import matplotlib.pyplot as plt
 from pathlib import Path
 import time
-from torch.utils.data import DataLoader
+
 
 class Learner():
     def __init__(self, model, opt, loss_func, data, metrics=None, callbacks=None, device=None):
@@ -33,7 +34,7 @@ class Learner():
         cbs = tbox.listify(callbacks)
         # 添加一些必要的回调
         cbs.append(cbks.Recorder(as_attr=True))
-        cbs += [cbks.TrainEvalCallback(),
+        cbs += [cbks.StatesCallback(),
                 cbks.CudaCallback(device=device),
                 cbks.ProgressBarCallback(),
                 cbks.AvgStatsCallback(metrics=metrics)]
@@ -115,28 +116,24 @@ class Learner():
         if len(test_dl) == 0:
             return
         self.test_dl = test_dl
-        test_cb = cbks.TestCallback(learner=self)
-        self.cbs += [test_cb]
         if not self('begin_test', reverse=False):
             with torch.no_grad():
                 self.all_batches(test_dl)
         self('after_test', reverse=True)
-        self.cbs.remove(test_cb)
         self.test_dl = None
 
     def predict(self, dataset):
         """
         dataset: Dataloader或者可直接计算的数据如Tensor或PyG Data
         """
-        is_dl = False
-        if  isinstance(dataset, DataLoader):
-            is_dl = True
-        else:
+
+        if hasattr(dataset, 'to'):  # whether it has the "to(device)" method
             dataset = [dataset]
+        is_dl = isinstance(dataset, DataLoaderBase)
 
         preds = []
-        for ds in dataset:
-            self.pred_data_tensor = ds[0] if is_dl else ds
+        for batch in dataset:
+            self.pred_data_tensor = batch[0] if is_dl else batch
             self('begin_predict', reverse=False)
             with torch.no_grad():
                 preds.append(self.model(self.pred_data_tensor))

@@ -1,8 +1,8 @@
 import torch
 from torch_geometric.data import DataLoader as DataLoader_pyg
+from .data import DataLoaderBase
 
-
-class PyGDataLoader(DataLoader_pyg):
+class PyGDataLoader(DataLoader_pyg, DataLoaderBase):
 
     def __iter__(self):
         for data in super().__iter__():
@@ -32,7 +32,7 @@ class MaskedTensor:
         return len(self.data)
 
 
-class PyGGraphLoader:
+class PyGGraphLoader(DataLoaderBase):
     """
     用于节点计算，仅包含单一的torch_geometric.data.data.Data的pyg_dataset
     """

@@ -12,7 +12,11 @@ class Dataset():
         return self.x[i], self.y[i]
 
 
-class DataLoader(TrochDataLoader):
+class DataLoaderBase:
+    pass
+
+
+class DataLoader(TrochDataLoader, DataLoaderBase):
     def __init__(self, *p, **pd):
         super().__init__(*p, **pd)
 

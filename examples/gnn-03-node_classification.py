@@ -50,13 +50,13 @@ opt = optim.SGD(model.parameters(), lr=0.5, weight_decay=0.01)
 learner = Learner(model, opt, masked_cross_entropy, data, metrics=[masked_accuracy])
 
 # 4. fit
-learner.fit(100)
+learner.fit(10)
 
 # 5. test
 learner.test(test_dl)
 
 # 6. predict
-pred = learner.predict(dataset[0])
+pred = learner.predict(dataset)
 print(pred.size())
 
 # 7. plot

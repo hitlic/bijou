@@ -187,7 +187,7 @@ class ProgressBarCallback(Callback):
         self.pbar.close()
 
 
-class TrainEvalCallback(Callback):
+class StatesCallback(Callback):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -209,13 +209,6 @@ class TrainEvalCallback(Callback):
     def begin_validate(self):
         self.model.eval()
         self.learner.state = 'val'
-
-
-class TestCallback(Callback):
-    _order = 2
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def begin_test(self):
         self.model.eval()
