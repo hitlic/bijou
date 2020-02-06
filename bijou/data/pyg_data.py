@@ -34,7 +34,7 @@ class MaskedTensor:
 
 class PyGGraphLoader:
     """
-    用于节点计算，仅包含单一的torch_geometric.data.data.Data的Wrapper
+    用于节点计算，仅包含单一的torch_geometric.data.data.Data的pyg_dataset
     """
 
     def __init__(self, pyg_dataset, phase):
