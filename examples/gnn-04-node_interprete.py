@@ -65,6 +65,6 @@ print(preds)
 print(indecies)
 
 # learner.interpreter.plot_graph(loss)
-learner.interpreter.plot_graph(loss_noreduction, layout=nx.spring_layout, max_node_size=1000, min_node_size=300,
+learner.interpreter.plot_graph(loss_noreduction, layout=nx.kamada_kawai_layout, max_node_size=1000, min_node_size=300,
                                label_score=True, label_id=True, k=15, font_color='r', font_size=6)
 plt.show()
