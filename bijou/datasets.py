@@ -40,10 +40,10 @@ def cora(path='./datasets'):
     path = Path(path)
     if not (path).exists():
         path.mkdir(parents=True)
-    if not (path/'Cora').exists():
-        url = 'https://github.com/hitlic/bijou/raw/master/datasets/Cora.zip'
-        download(url, path, 'Cora.zip')
-    return path/'Cora'
+    if not (path/'PyG-Cora').exists():
+        url = 'https://github.com/hitlic/bijou/raw/master/datasets/PyG-Cora.zip'
+        download(url, path, 'PyG-Cora.zip')
+    return path/'PyG-Cora'
 
 
 def yoochoose_10k(path='./datasets'):
@@ -53,7 +53,7 @@ def yoochoose_10k(path='./datasets'):
     path = Path(path)
     if not (path).exists():
         path.mkdir(parents=True)
-    if not (path/'yoochoose_10k').exists():
-        url = 'https://github.com/hitlic/bijou/raw/master/datasets/yoochoose_10k.zip'
-        download(url, path, 'yoochoose_10k.zip')
-    return path/'yoochoose_10k'
+    if not (path/'PyG-yoochoose_10k').exists():
+        url = 'https://github.com/hitlic/bijou/raw/master/datasets/PyG-yoochoose_10k.zip'
+        download(url, path, 'PyG-yoochoose_10k.zip')
+    return path/'PyG-yoochoose_10k'
