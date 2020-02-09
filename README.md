@@ -3,9 +3,9 @@
 A lightweight freamwork based on [fastai course](https://course.fast.ai) for training pytorch models conveniently. In particular, it is compatible with datasets and models of [pytorch_geometric](https://github.com/rusty1s/pytorch_geometric) and [DGL](https://docs.dgl.ai/en/latest/) for [Graph Neural Networks](https://arxiv.org/pdf/1812.08434.pdf).
 
 ## Features
-- Compatible with DGL and PyG for GNN
+- Compatible with PyG and DGL for GNN
   - Graph level learning: It is compatible with [pytorch_geometric](https://github.com/rusty1s/pytorch_geometric) and [DGL](https://docs.dgl.ai/en/latest/) for Graph Neural Networks of graph classification and other graph level learning.
-  - Node level learning: It can be used in node classification or other node level learning with dataset of sigle [pytorch_geometric Data](https://pytorch-geometric.readthedocs.io/en/latest/modules/data.html) or [DGLGraph](https://docs.dgl.ai/en/latest/api/python/graph.html).
+  - Node level learning: It can be used in node classification or other node level learning with dataset of single [pytorch_geometric Data](https://pytorch-geometric.readthedocs.io/en/latest/modules/data.html) or [DGLGraph](https://docs.dgl.ai/en/latest/api/python/graph.html).
 - Easy to Use
     - It likes [FastAI](https://docs.fast.ai) but far more lightweight. 
 
@@ -20,7 +20,8 @@ A lightweight freamwork based on [fastai course](https://course.fast.ai) for tra
   - Numpy
   - tqdm
   - Networkx
-  - torch-geometric (optional)
+  - torch-geometric   (Optional)
+  - dgl               (Optional)
 
 ## Using
 
