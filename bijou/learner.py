@@ -68,7 +68,7 @@ class Learner():
         try:
             self.xb, self.yb = xb, yb
             self('begin_batch', reverse=False)
-            self.predb = self.model(self.xb)
+            self.predb = self.model(*self.xb)  # There may be multiple inputs
             self('after_pred', reverse=True)
             self.loss = self.loss_func(self.predb, self.yb)
             self('after_loss', reverse=True)
@@ -135,10 +135,10 @@ class Learner():
 
         preds = []
         for batch in dataset:
-            self.pred_data_tensor = batch[0] if is_dl else batch
+            self.predict_data = batch[0] if is_dl else batch
             self('begin_predict', reverse=False)
             with torch.no_grad():
-                preds.append(self.model(self.pred_data_tensor))
+                preds.append(self.model(*self.predict_data))
         return torch.cat(preds, 0)
 
     def fit_one_cycle(self, epochs, stage=(0.3, 0.7), start_lr=0.01, high_lr=0.5, end_lr=0.01):

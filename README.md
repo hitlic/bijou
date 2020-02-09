@@ -1,11 +1,11 @@
 # bijou
 
-A lightweight freamwork based on [fastai course](https://course.fast.ai) for training pytorch models conveniently. In particular, it is compatible with [pytorch_geometric](https://github.com/rusty1s/pytorch_geometric) dataset and models for [Graph Neural Networks](https://arxiv.org/pdf/1812.08434.pdf).
+A lightweight freamwork based on [fastai course](https://course.fast.ai) for training pytorch models conveniently. In particular, it is compatible with datasets and models of [pytorch_geometric](https://github.com/rusty1s/pytorch_geometric) and [DGL](https://docs.dgl.ai/en/latest/) for [Graph Neural Networks](https://arxiv.org/pdf/1812.08434.pdf).
 
 ## Features
-- Compatible with PyG
-  - Graph level learning: It is compatible with [pytorch_geometric](https://github.com/rusty1s/pytorch_geometric) for Graph Neural Networks of graph classification and other graph level learning.
-  - Node level learning: It can be used in node classification or other node level learning with sigle [pytorch_geometric Data](https://pytorch-geometric.readthedocs.io/en/latest/modules/data.html).
+- Compatible with DGL and PyG for GNN
+  - Graph level learning: It is compatible with [pytorch_geometric](https://github.com/rusty1s/pytorch_geometric) and [DGL](https://docs.dgl.ai/en/latest/) for Graph Neural Networks of graph classification and other graph level learning.
+  - Node level learning: It can be used in node classification or other node level learning with dataset of sigle [pytorch_geometric Data](https://pytorch-geometric.readthedocs.io/en/latest/modules/data.html) or [DGLGraph](https://docs.dgl.ai/en/latest/api/python/graph.html).
 - Easy to Use
     - It likes [FastAI](https://docs.fast.ai) but far more lightweight. 
 
@@ -21,6 +21,10 @@ A lightweight freamwork based on [fastai course](https://course.fast.ai) for tra
   - tqdm
   - Networkx
   - torch-geometric (optional)
+
+## Using
+
+See following examples, and more examples are [here](https://github.com/hitlic/bijou/tree/master/examples).
 
 ## Examples
 
@@ -68,7 +72,7 @@ learner.recorder.plot_metrics()
 plt.show()
 ```
 
-### b. Graph Classification
+### b. Graph Classification with PyG
 
 NOTE: Performance of this GNN model's is not good, as the dataset is highly unbalanced.
 
@@ -76,14 +80,14 @@ NOTE: Performance of this GNN model's is not good, as the dataset is highly unba
 import torch, torch.nn as nn, torch.nn.functional as F, torch.optim as optim
 from torch_geometric.nn import global_max_pool, TopKPooling, GCNConv
 from bijou.learner import Learner
-from bijou.datasets import yoochoose_10k
+from bijou.datasets import pyg_yoochoose_10k
 from bijou.data import DataBunch, PyGDataLoader
 from bijou.metrics import accuracy
 from examples.pyg_dataset import YooChooseBinaryDataset
 import matplotlib.pyplot as plt
 
 # 1. dataset
-dataset = YooChooseBinaryDataset(root=yoochoose_10k()).shuffle()
+dataset = YooChooseBinaryDataset(root=pyg_yoochoose_10k()).shuffle()
 train_ds, val_ds, test_ds = dataset[:8000], dataset[8000:9000], dataset[9000:]
 train_dl = PyGDataLoader(train_ds, batch_size=64, shuffle=True)
 val_dl = PyGDataLoader(val_ds, batch_size=64)
@@ -140,7 +144,7 @@ learner.recorder.plot_metrics()
 plt.show()
 ```
 
-### c. Graph Node Classification
+### c. Node Classification with PyG
 
 ```python
 from torch_geometric.datasets import Planetoid
@@ -149,11 +153,11 @@ from torch_geometric.nn import GCNConv
 from bijou.data import PyGGraphLoader, DataBunch
 from bijou.learner import Learner
 from bijou.metrics import masked_cross_entropy, masked_accuracy
-from bijou.datasets import cora
+from bijou.datasets import pyg_cora
 import matplotlib.pyplot as plt
 
 # 1. dataset
-dataset = Planetoid(root=cora(), name='Cora')
+dataset = Planetoid(root=pyg_cora(), name='Cora')
 train_dl = PyGGraphLoader(dataset, 'train')
 val_dl = PyGGraphLoader(dataset, 'val')
 test_dl = PyGGraphLoader(dataset, 'test')
@@ -194,4 +198,14 @@ print(pred.size())
 # 7. plot
 learner.recorder.plot_metrics()
 plt.show()
+```
+
+### d. Graph Classification with DGL
+```python
+
+```
+
+### e. Node Classification with DGL
+```python
+
 ```

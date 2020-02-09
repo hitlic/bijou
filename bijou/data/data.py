@@ -1,4 +1,14 @@
+"""
+class tree of dataloaders:
+    DataLoaderBase ─┬─> DataLoader                            (for common dataset)
+                    │        ├─────────> PyGDataLoader        (for PyG graph dataset)
+                    │        └─────────> DGLDataLoader        (for DGL graph dataset)
+                    └─> GraphLoader ─┬─> PyGGraphLoader       (for PyG dataset with single Graph)
+                                     └─> DGLGraphLoader       (for DGL dataset with single Graph)
+"""
+
 from torch.utils.data import DataLoader as TrochDataLoader
+import torch
 
 
 class Dataset():
@@ -13,21 +23,51 @@ class Dataset():
 
 
 class DataLoaderBase:
-    pass
+    @classmethod
+    def loaders(cls, train_ds, val_ds, test_ds=None, batch_size=1):
+        train_dl = cls(train_ds, batch_size=batch_size, shuffle=True)
+        val_dl = cls(val_ds, batch_size=batch_size)
+        if test_ds is None:
+            return train_dl, val_dl
+        else:
+            return train_dl, val_dl, cls(test_ds, batch_size=batch_size)
 
 
 class DataLoader(TrochDataLoader, DataLoaderBase):
     def __init__(self, *p, **pd):
         super().__init__(*p, **pd)
 
+
+class MaskedTensor:
+    """
+    for semi-supervised learning
+    """
+    def __init__(self, data, mask):
+        self.data = data
+        self.mask = mask
+
+    def to(self, device):
+        self.data = self.data.to(device)
+        self.mask = self.mask.to(device)
+        return self
+
+    def __len__(self):
+        return len(self.data)
+
+
+class GraphLoader(DataLoaderBase):
     @classmethod
-    def loaders(cls, train_ds, val_ds, test_ds=None, batch_size=1):
-        train_dl = cls(train_ds, batch_size=batch_size)
-        val_dl = cls(val_ds, batch_size=batch_size)
-        if test_ds is None:
-            return train_dl, val_dl
+    def loaders(cls, dataset, phases=('train', 'val', 'test')):
+        return [cls(dataset, phase) for phase in phases]
+
+    def __len__(self):
+        if torch.sum(self.mask.int()) > 0:    # mask may all False
+            return 1
         else:
-            return train_dl, val_dl, cls(test_ds, batch_size=batch_size)
+            return 0
+
+    def __iter__(self):
+        yield self.data, self.label
 
 
 class DataBunch():

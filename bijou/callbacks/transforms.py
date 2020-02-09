@@ -8,4 +8,4 @@ class BatchTransformXCallback(Callback):
         self.tfm = tfm
 
     def begin_batch(self):
-        self.learner.xb = self.tfm(self.xb)
+        self.learner.xb = self.tfm(self.xb[0])

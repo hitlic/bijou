@@ -1,5 +1,6 @@
 from .data import *
 try:
-    from .pyg_data import *
+    from .data_pyg import *
+    from .data_dgl import *
 except Exception as e:
     pass

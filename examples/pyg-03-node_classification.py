@@ -10,7 +10,7 @@ from torch_geometric.nn import GCNConv
 from bijou.data import PyGGraphLoader, DataBunch
 from bijou.learner import Learner
 from bijou.metrics import masked_cross_entropy, masked_accuracy
-from bijou.datasets import cora
+from bijou.datasets import pyg_cora
 import matplotlib.pyplot as plt
 
 if torch.cuda.is_available():
@@ -19,7 +19,7 @@ else:
     torch.manual_seed(1)
 
 # 1. dataset
-dataset = Planetoid(root=cora(), name='Cora')
+dataset = Planetoid(root=pyg_cora(), name='Cora')
 train_dl = PyGGraphLoader(dataset, 'train')
 val_dl = PyGGraphLoader(dataset, 'val')
 test_dl = PyGGraphLoader(dataset, 'test')

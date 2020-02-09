@@ -305,11 +305,25 @@ class CudaCallback(Callback):
         self.model.to(self.device)
 
     def begin_batch(self):
-        self.learner.xb, self.learner.yb = self.xb.to(self.device), self.yb.to(self.device)
+        # if isinstance(self.xb, (list, tuple)):
+        #     self.learner.xb = [xs.to(self.device) for xs in self.xb]  # multi-inputs
+        # else:
+        #     self.learner.xb = [self.xb.to(self.device)]  # single-inputs
+        self.learner.xb = self.to_device(self.xb)
+        self.learner.yb = self.yb.to(self.device)
 
     def begin_predict(self):
         self.model.to(self.device)
-        self.learner.pred_data_tensor = self.pred_data_tensor.to(self.device)
+        self.learner.predict_data = self.to_device(self.predict_data)
+        # self.learner.predict_data = self.predict_data.to(self.device)
+
+    def to_device(self, batch_data):
+        if isinstance(batch_data, (list, tuple)):
+            xb = [xs.to(self.device) for xs in batch_data]  # multi-inputs
+        else:
+            xb = [batch_data.to(self.device)]  # single-inputs
+        return xb
+
 
 
 class Checkpoints(Callback):

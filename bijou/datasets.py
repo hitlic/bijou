@@ -33,7 +33,7 @@ def mnist(path='./datasets'):
     return map(torch.tensor, (x_train, y_train, x_valid, y_valid, x_test, y_test))
 
 
-def cora(path='./datasets'):
+def pyg_cora(path='./datasets'):
     '''
     https://people.cs.umass.edu/~mccallum/data/
     '''
@@ -46,7 +46,7 @@ def cora(path='./datasets'):
     return path/'PyG-Cora'
 
 
-def yoochoose_10k(path='./datasets'):
+def pyg_yoochoose_10k(path='./datasets'):
     '''
     https://2015.recsyschallenge.com/challenge.html
     '''
@@ -57,3 +57,16 @@ def yoochoose_10k(path='./datasets'):
         url = 'https://github.com/hitlic/bijou/raw/master/datasets/PyG-yoochoose_10k.zip'
         download(url, path, 'PyG-yoochoose_10k.zip')
     return path/'PyG-yoochoose_10k'
+
+
+def dgl_cora(path='./datasets'):
+    '''
+    https://people.cs.umass.edu/~mccallum/data/
+    '''
+    path = Path(path)
+    if not (path).exists():
+        path.mkdir(parents=True)
+    if not (path/'DGL-Cora').exists():
+        url = 'https://github.com/hitlic/bijou/raw/master/datasets/DGL-Cora.zip'
+        download(url, path, 'DGL-Cora.zip')
+    return path/'DGL-Cora'

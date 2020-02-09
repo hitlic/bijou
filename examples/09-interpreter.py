@@ -45,7 +45,7 @@ print(indecies)
 plt.figure(figsize=[12, 6])
 for i in range(10):
     plt.subplot(2, 5, i+1)
-    plt.imshow(xs[i].view([28, -1]))
+    plt.imshow(xs[i][0].view([28, -1]))
     plt.title(f'{ys[i]} --> {np.argmax(preds[i])}')
 
 # m = learner.interpreter.confusion_matrix()
