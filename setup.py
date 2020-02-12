@@ -17,7 +17,7 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url="https://github.com/hitlic/bijou",
     classifiers=[
-        'Development Status :: Alpha',
+        'Development Status :: 3 - Alpha',
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
