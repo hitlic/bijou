@@ -203,10 +203,190 @@ plt.show()
 
 ### d. Graph Classification with DGL
 ```python
+import torch, torch.nn as nn, torch.nn.functional as F, torch.optim as optim
+import dgl
+import dgl.function as fn
+from dgl.data import MiniGCDataset
+from bijou.data import DGLDataLoader, DataBunch
+from bijou.metrics import accuracy
+from bijou.learner import Learner
+import matplotlib.pyplot as plt
 
+# 1. dataset
+train_ds = MiniGCDataset(320, 10, 20)
+val_ds = MiniGCDataset(100, 10, 20)
+test_ds = MiniGCDataset(80, 10, 20)
+
+train_dl = DGLDataLoader(train_ds, batch_size=32, shuffle=True)
+val_dl = DGLDataLoader(val_ds, batch_size=32, shuffle=False)
+test_dl = DGLDataLoader(test_ds, batch_size=32, shuffle=False)
+
+data = DataBunch(train_dl, val_dl)
+
+# 2. mode and optimizer
+msg = fn.copy_src(src='h', out='m')  # Sends a message of node feature h.
+
+def reduce(nodes):
+    """Take an average over all neighbor node features hu and use it to
+    overwrite the original node feature."""
+    accum = torch.mean(nodes.mailbox['m'], 1)
+    return {'h': accum}
+
+class NodeApplyModule(nn.Module):
+    """Update the node feature hv with ReLU(Whv+b)."""
+    def __init__(self, in_feats, out_feats, activation):
+        super().__init__()
+        self.linear = nn.Linear(in_feats, out_feats)
+        self.activation = activation
+
+    def forward(self, node):
+        h = self.linear(node.data['h'])
+        h = self.activation(h)
+        return {'h' : h}
+
+class GCN(nn.Module):
+    def __init__(self, in_feats, out_feats, activation):
+        super().__init__()
+        self.apply_mod = NodeApplyModule(in_feats, out_feats, activation)
+
+    def forward(self, g, feature):
+        # Initialize the node features with h.
+        g.ndata['h'] = feature
+        g.update_all(msg, reduce)
+        g.apply_nodes(func=self.apply_mod)
+        return g.ndata.pop('h')
+
+class Classifier(nn.Module):
+    def __init__(self, in_dim, hidden_dim, n_classes):
+        super(Classifier, self).__init__()
+
+        self.layers = nn.ModuleList([
+            GCN(in_dim, hidden_dim, F.relu),
+            GCN(hidden_dim, hidden_dim, F.relu)])
+        self.classify = nn.Linear(hidden_dim, n_classes)
+
+    def forward(self, g):
+        # For undirected graphs, in_degree is the same as
+        # out_degree.
+        h = g.in_degrees().view(-1, 1).float()
+        for conv in self.layers:
+            h = conv(g, h)
+        g.ndata['h'] = h
+        hg = dgl.mean_nodes(g, 'h')
+        return self.classify(hg)
+
+model = Classifier(1, 256, train_ds.num_classes) 
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+
+# 3. learne
+loss_func = nn.CrossEntropyLoss()
+learner = Learner(model, optimizer, loss_func, data, metrics=accuracy)
+
+# 4. fit
+learner.fit(80)
+
+# 5. test
+learner.test(test_dl)
+
+# 6. predict
+learner.predict(test_dl)
+
+# 7. plot
+learner.recorder.plot_metrics()
+plt.show()
 ```
 
 ### e. Node Classification with DGL
 ```python
+import torch.nn.functional as F, torch.nn as nn, torch as th
+import dgl.function as fn
+from dgl import DGLGraph
+from dgl.data import citation_graph as citegrh
+from bijou.learner import Learner
+from bijou.data import GraphLoader, DataBunch
+from bijou.metrics import masked_accuracy, masked_cross_entropy
+import matplotlib.pyplot as plt
+import networkx as nx
 
+
+# 1. dataset
+def load_cora_data():
+    data = citegrh.load_cora()
+    features = th.FloatTensor(data.features)
+    labels = th.LongTensor(data.labels)
+    train_mask = th.BoolTensor(data.train_mask)
+    val_mask = th.BoolTensor(data.val_mask)
+    test_mask = th.BoolTensor(data.test_mask)
+    g = data.graph
+    # add self loop
+    g.remove_edges_from(nx.selfloop_edges(g))
+    g = DGLGraph(g)
+    g.add_edges(g.nodes(), g.nodes())
+    return g, features, labels, train_mask, val_mask, test_mask
+
+g, features, labels, train_mask, val_mask, test_mask = load_cora_data()
+train_dl = GraphLoader(g, features=features, labels=labels, mask=train_mask)
+val_dl = GraphLoader(g, features=features, labels=labels, mask=val_mask)
+test_dl = GraphLoader(g, features=features, labels=labels, mask=test_mask)
+data = DataBunch(train_dl, val_dl)
+
+
+# 2. model and optimizer
+gcn_msg = fn.copy_src(src='h', out='m')
+gcn_reduce = fn.sum(msg='m', out='h')
+
+class NodeApplyModule(nn.Module):
+    def __init__(self, in_feats, out_feats, activation):
+        super(NodeApplyModule, self).__init__()
+        self.linear = nn.Linear(in_feats, out_feats)
+        self.activation = activation
+
+    def forward(self, node):
+        h = self.linear(node.data['h'])
+        if self.activation is not None:
+            h = self.activation(h)
+        return {'h': h}
+
+class GCN(nn.Module):
+    def __init__(self, in_feats, out_feats, activation):
+        super(GCN, self).__init__()
+        self.apply_mod = NodeApplyModule(in_feats, out_feats, activation)
+
+    def forward(self, g, feature):
+        g.ndata['h'] = feature
+        g.update_all(gcn_msg, gcn_reduce)
+        g.apply_nodes(func=self.apply_mod)
+        return g.ndata.pop('h')
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.gcn1 = GCN(1433, 16, F.relu)
+        self.gcn2 = GCN(16, 7, None)
+
+    def forward(self, g, features):
+        x = self.gcn1(g, features)
+        x = self.gcn2(g, x)
+        return x
+
+net = Net()
+optimizer = th.optim.Adam(net.parameters(), lr=1e-3)
+
+
+# 3. learner
+learner = Learner(net, optimizer, masked_cross_entropy, data, metrics=masked_accuracy)
+
+# 4. fit
+learner.fit(50)
+
+# 5. test
+learner.test(test_dl)
+
+# 6. predict
+learner.predict(test_dl)
+
+# 7. plot
+learner.recorder.plot_metrics()
+plt.show()
 ```
