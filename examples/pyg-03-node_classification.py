@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch_geometric.nn import GCNConv
-from bijou.data import PyGGraphLoader, DataBunch
+from bijou.data import GraphLoader, DataBunch
 from bijou.learner import Learner
 from bijou.metrics import masked_cross_entropy, masked_accuracy
 from bijou.datasets import pyg_cora
@@ -20,10 +20,12 @@ else:
 
 # 1. dataset
 dataset = Planetoid(root=pyg_cora(), name='Cora')
-train_dl = PyGGraphLoader(dataset, 'train')
-val_dl = PyGGraphLoader(dataset, 'val')
-test_dl = PyGGraphLoader(dataset, 'test')
-# train_dl, val_dl, test_dl = PyGGraphLoader.loaders(dataset)
+g = dataset[0]
+train_dl = GraphLoader(g, labels=g.y, mask=g.train_mask)
+val_dl = GraphLoader(g, labels=g.y, mask=g.val_mask)
+test_dl = GraphLoader(g, labels=g.y, mask=g.test_mask)
+# train_dl, val_dl, test_dl = GraphLoader.loaders(g, labels=g.y, masks=[g.train_mask, g.val_mask, g.test_mask])
+
 data = DataBunch(train_dl, train_dl)
 
 

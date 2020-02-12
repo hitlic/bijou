@@ -4,17 +4,30 @@ sys.path.append('..')
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 import dgl
 import dgl.function as fn
 from dgl.data import MiniGCDataset
-import torch.optim as optim
-from bijou.data import DGLDataLoader
-from bijou.callbacks import DGLInterpreter
+from bijou.data import DGLDataLoader, DataBunch
 from bijou.metrics import accuracy
+from bijou.learner import Learner
 import matplotlib.pyplot as plt
 
-# Sends a message of node feature h.
-msg = fn.copy_src(src='h', out='m')
+
+# 1. dataset
+train_ds = MiniGCDataset(320, 10, 20)
+val_ds = MiniGCDataset(100, 10, 20)
+test_ds = MiniGCDataset(80, 10, 20)
+
+train_dl = DGLDataLoader(train_ds, batch_size=32, shuffle=True)
+val_dl = DGLDataLoader(val_ds, batch_size=32, shuffle=False)
+test_dl = DGLDataLoader(test_ds, batch_size=32, shuffle=False)
+
+data = DataBunch(train_dl, val_dl)
+
+# 2. mode and optimizer
+
+msg = fn.copy_src(src='h', out='m')  # Sends a message of node feature h.
 
 def reduce(nodes):
     """Take an average over all neighbor node features hu and use it to
@@ -67,31 +80,23 @@ class Classifier(nn.Module):
         hg = dgl.mean_nodes(g, 'h')
         return self.classify(hg)
 
-
-# Create training and test sets.
-train_ds = MiniGCDataset(320, 10, 20)
-val_ds = MiniGCDataset(100, 10, 20)
-test_ds = MiniGCDataset(80, 10, 20)
-
-train_dl = DGLDataLoader(train_ds, batch_size=32, shuffle=True)
-val_dl = DGLDataLoader(val_ds, batch_size=32, shuffle=False)
-test_dl = DGLDataLoader(test_ds, batch_size=32, shuffle=False)
-
-from bijou.data import DataBunch
-data = DataBunch(train_dl, val_dl)
-
-
-# Create model
-model = Classifier(1, 256, train_ds.num_classes)
-loss_func = nn.CrossEntropyLoss()
+model = Classifier(1, 256, train_ds.num_classes) 
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-from bijou.learner import Learner
 
-learner = Learner(model, optimizer, loss_func, data, metrics=accuracy, callbacks=DGLInterpreter)
+# 3. learne
+loss_func = nn.CrossEntropyLoss()
+learner = Learner(model, optimizer, loss_func, data, metrics=accuracy)
+
+# 4. fit
 learner.fit(80)
+
+# 5. test
 learner.test(test_dl)
+
+# 6. predict
 learner.predict(test_dl)
 
+# 7. plot
 learner.recorder.plot_metrics()
 plt.show()

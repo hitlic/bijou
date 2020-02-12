@@ -1,8 +1,8 @@
-from .interpreters import InterpreterBase
-from .interpreters import GraphInterpreter
+from .interpreters import InterpreterBase, GraphInterpreter
 import torch
 import networkx as nx
 import dgl
+
 
 class DGLInterpreter(InterpreterBase):
     def __init__(self, task_type='classify', learner=None, multi_out=False):
@@ -31,7 +31,7 @@ class DGLInterpreter(InterpreterBase):
                 predbs = [torch.cat(predb, 1) for predb in predbs]
                 setattr(self, f'_pred_{phase}', torch.cat(predbs).detach().cpu())
 
-    def plot_graph(self, data, directed=False,**kwargs):
+    def plot_graph(self, data, directed=False, **kwargs):
         if directed:
             g = data.to_networkx()
         else:
@@ -43,3 +43,6 @@ class DGLInterpreter(InterpreterBase):
 class DGLGraphInterpreter(GraphInterpreter):
     def get_features(self, data):
         return data[1]
+
+    def data2nxg(self, data):
+        return data.to_networkx()

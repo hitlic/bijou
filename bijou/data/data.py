@@ -3,8 +3,7 @@ class tree of dataloaders:
     DataLoaderBase ─┬─> DataLoader                            (for common dataset)
                     │        ├─────────> PyGDataLoader        (for PyG graph dataset)
                     │        └─────────> DGLDataLoader        (for DGL graph dataset)
-                    └─> GraphLoader ─┬─> PyGGraphLoader       (for PyG dataset with single Graph)
-                                     └─> DGLGraphLoader       (for DGL dataset with single Graph)
+                    └─> GraphLoader                           (for PyG or DGL dataset with single Graph)
 """
 
 from torch.utils.data import DataLoader as TrochDataLoader
@@ -56,9 +55,27 @@ class MaskedTensor:
 
 
 class GraphLoader(DataLoaderBase):
+    def __init__(self, graph, labels, mask, features=None):
+        """
+        Args:
+            graph: torch_geometric.data.data.Data或dgl.DGLGraph对象
+        """
+        if not isinstance(mask, torch.Tensor):
+            mask = torch.tensor(mask, dtype=torch.bool)
+        if not isinstance(labels, torch.Tensor):
+            labels = torch.tensor(labels, dtype=torch.long)
+
+        # GraphLoader must have following three attributes
+        if features is None:
+            self.data = graph
+        else:
+            self.data = (graph, features)
+        self.label = MaskedTensor(labels, mask)
+        self.mask = mask
+
     @classmethod
-    def loaders(cls, dataset, phases=('train', 'val', 'test')):
-        return [cls(dataset, phase) for phase in phases]
+    def loaders(cls, g, labels, masks, features=None):
+        return [cls(g, labels, mask, features) for mask in masks]
 
     def __len__(self):
         if torch.sum(self.mask.int()) > 0:    # mask may all False
