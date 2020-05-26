@@ -1,0 +1,3 @@
+python setup.py sdist bdist_wheel bdist_egg
+python -m twine upload dist/* 
+pip install bijou -i https://pypi.org/simple/
