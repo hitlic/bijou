@@ -305,23 +305,25 @@ class CudaCallback(Callback):
         self.model.to(self.device)
 
     def begin_batch(self):
-        # if isinstance(self.xb, (list, tuple)):
-        #     self.learner.xb = [xs.to(self.device) for xs in self.xb]  # multi-inputs
-        # else:
-        #     self.learner.xb = [self.xb.to(self.device)]  # single-inputs
-        self.learner.xb = self.to_device(self.xb)
-        self.learner.yb = self.yb.to(self.device)
+        self.learner.xb = self.to_device(self.xb, True)
+        self.learner.yb = self.to_device(self.yb, False)
 
     def begin_predict(self):
         self.model.to(self.device)
         self.learner.predict_data = self.to_device(self.predict_data)
         # self.learner.predict_data = self.predict_data.to(self.device)
 
-    def to_device(self, batch_data):
+    def to_device(self, batch_data, to_list=True):
+        """
+        to_list: change single data to list or not
+        """
         if isinstance(batch_data, (list, tuple)):
-            xb = [xs.to(self.device) for xs in batch_data]  # multi-inputs
+            xb = [xs.to(self.device) for xs in batch_data]  # multi-inputs or multi-outputs
         else:
-            xb = [batch_data.to(self.device)]  # single-inputs
+            if to_list:
+                xb = [batch_data.to(self.device)]  # single-inputs or multi-outputs
+            else:
+                xb = batch_data.to(self.device)
         return xb
 
 
