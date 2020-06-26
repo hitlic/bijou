@@ -3,6 +3,8 @@ import re
 import matplotlib.pyplot as plt
 from bijou.utils import ToolBox as tbox
 from tqdm import tqdm
+from pathlib import Path
+import os
 
 
 class CancelTrainException(Exception):
@@ -327,22 +329,28 @@ class CudaCallback(Callback):
         return xb
 
 
-
 class Checkpoints(Callback):
     _order = -1
 
-    def __init__(self, epochs=1, path='./checkpoints', skip_worse=False, **kwargs):
+    def __init__(self, epochs=1, path='./checkpoints', skip_worse=False, clear=False, **kwargs):
         """
         Args:
             epochs: save checkpoint each 'epochs' epochs.
             path: path
             skip_worse: skip at worse loss epoch
+            clear: whether clear exists checkpoints in path or not
         """
         super().__init__(**kwargs)
         self.per_epochs = epochs
         self.path = path
         self.skip_worse = skip_worse
         self.best_check_loss = float('inf')
+
+        if clear:
+            p = Path(path)
+            ckpts = p.glob('*.ckpt')
+            for ckpt in ckpts:
+                os.remove(ckpt)
 
     def after_epoch(self):
         if (self.epoch+1) % self.per_epochs == 0:
