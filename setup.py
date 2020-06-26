@@ -1,4 +1,4 @@
-from bijou import __vsersion__
+from bijou import __version__
 import setuptools
 
 desc = 'A fastai-like framework for training, tuning and probing pytorch models, which is compatible with pytorch_geometric.'
@@ -8,7 +8,7 @@ with open("README.md", 'r') as fh:
 
 setuptools.setup(
     name="bijou",
-    version=__vsersion__,
+    version=__version__,
     author="hitlic",
     author_email="liuchen.lic@gmail.com",
     license='MIT',
