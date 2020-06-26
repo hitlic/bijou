@@ -139,7 +139,10 @@ class Learner():
             self('begin_predict', reverse=False)
             with torch.no_grad():
                 preds.append(self.model(*self.predict_data))
-        return torch.cat(preds, 0)
+        if preds and isinstance(preds[0], tuple):  # multiple output
+            return preds # predict result of batches
+        else:
+            return torch.cat(preds, 0)
 
     def fit_one_cycle(self, epochs, stage=(0.3, 0.7), start_lr=0.01, high_lr=0.5, end_lr=0.01):
         sched = cbks.combine_scheds(stage,
@@ -167,8 +170,8 @@ class Learner():
         保存模型
         """
         path = Path(path)
-        if not path.exists():
-            path.mkdir()
+        if not path.parent.exists():
+            path.parent.mkdir()
         torch.save(self.model, path)
 
     @classmethod
