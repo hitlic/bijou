@@ -15,7 +15,7 @@ import time
 
 
 class Learner():
-    def __init__(self, model, opt, loss_func, data, metrics=None, callbacks=None, device=None):
+    def __init__(self, model, opt, loss_func, data=None, metrics=None, callbacks=None, device=None):
         """
         Args:
             model: pytorch 模型
@@ -94,11 +94,10 @@ class Learner():
 
     def fit(self, epochs):
         self.epochs, self.loss = epochs, torch.tensor(0.)
-        g_epoch = self.epoch
+        start_epoch = self.epoch
         try:
             self('begin_fit', reverse=False)
             for epoch in range(epochs):
-                self.epoch = epoch + g_epoch  # resume from checkpoint
                 if not self('begin_epoch', reverse=False):
                     self.all_batches(self.data.train_dl)
 
@@ -107,6 +106,7 @@ class Learner():
                         if not self('begin_validate', reverse=False):
                             self.all_batches(self.data.valid_dl)
                 self('after_epoch', reverse=True)
+                self.epoch = epoch + start_epoch + 1  # resume from checkpoint
 
         except cbks.CancelTrainException:
             self('after_cancel_train', reverse=True)
@@ -182,13 +182,13 @@ class Learner():
         model = torch.load(path)
         return model
 
-    def load_checkpoint(self, check_name=None, check_new=False, check_best=False,
+    def load_checkpoint(self, check_name=None, check_latest=False, check_best=False,
                         check_opt=True, path='./checkpoints'):
         """
         load learner checkpoint
         Args:
             check_name: checkpoint file name
-            check_new: load latest checkpoint
+            check_latest: load latest checkpoint
             check_best: load best loss checkpoint
             check_opt: load opt state or not
             path: checkpoint folder path
@@ -198,12 +198,14 @@ class Learner():
                      if not f.is_dir() and f.name.endswith('.ckpt')}
         # find latest or best checkpoint
         if not check_name:
-            if check_name is None and not check_new and not check_best:
-                check_new = True
-            if check_new:
+            if check_name is None and not check_latest and not check_best:
+                check_latest = True
+            if check_latest:
                 check_name = max(name_dict.items(), key=lambda e: e[1][0])[0]
+                print('- Loadding the latest checkpoint ...')
             elif check_best:
                 check_name = min(name_dict.items(), key=lambda e: e[1][1])[0]
+                print('- Loadding the best checkpoint ...')
             if not check_name:
                 print('\nNo checkpoint!')
                 return
@@ -218,7 +220,7 @@ class Learner():
         check_info = torch.load(path/check_name)
 
         # load learner state
-        self.epoch = check_info['epoch'] + 1
+        self.epoch = 0  # check_info['epoch'] + 1
         self.best_loss = check_info['best_loss']
 
         # load mode state
